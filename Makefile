@@ -13,7 +13,7 @@ install: setup
 
 # Run the script with virtual environment activated
 run:
-	. venv/bin/activate && python connect_arlo.py
+	. venv/bin/activate && python test_connect_arlo.py
 
 # Clean up pyc files and __pycache__ directories
 clean:

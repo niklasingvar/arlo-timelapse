@@ -48,4 +48,12 @@ Thumbs.db
 
 # Generated files
 output/
-images/ 
+images/
+
+# Deployment files
+deployment/
+docker-lambda/
+*.zip
+lambda_deployment*.zip
+python_layer/
+output.json 
