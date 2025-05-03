@@ -1,0 +1,1019 @@
+Welcome to PyAarlo’s documentation!
+PyArlo
+class pyaarlo.PyArlo(\*\*kwargs)
+Entry point for all Arlo operations.
+
+This is used to login to Arlo, open and maintain an evenstream with Arlo, find and store devices and device state, provide keep-alive services and make sure media sources are kept up to date.
+
+Every device discovered and created is done in here, every device discovered and created uses this instance to log errors, info and debug, to access the state database and configuration settings.
+
+Required `kwargs` parameters:
+
+username - Your Arlo username.
+password - Your Arlo password.
+Optional `kwargs` parameters:
+
+wait_for_initial_setup - Wait for initial devices states to load before returning from constructor. Default True. Setting to False and using saved state can increase startup time.
+last_format - Date string format used when showing video file dates. Default %m-%d %H:%M.
+library_days - Number of days of recordings to load. Default is 30. If you have a lot of recordings you can lower this value.
+save_state - Store device state across restarts. Default True.
+state_file - Where to store state. Default is ${storage_dir}/${name.}pickle
+refresh_devices_every - Time, in hours, to refresh the device list from Arlo. This can help keep the login from timing out.
+stream_timeout - Time, in seconds, for the event stream to close after receiving no packets. 0 means no timeout. Default 0 seconds. Setting this to 120 can be useful for catching dead connections - ie, an ISP forced a new IP on you.
+synchronous_mode - Wait for operations to complete before returing. If you are coming from Pyarlo this will make Pyaarlo behave more like you expect.
+save_media_to - Save media to a local directory.
+Debug `kwargs` parameters:
+
+dump - Save event stream packets to a file.
+dump_file - Where to packets. Default is ${storage_dir}/packets.dump
+name - Name used for state and dump files.
+verbose_debug - If True, provide extra debug in the logs. This includes packets in and out.
+2FA authentication `kwargs` parameters:
+
+These parameters are needed for 2FA.
+
+tfa_source - Where to get the token from. Default is console. Can be imap to use email or rest-api to use rest API website.
+tfa_type - How to get the 2FA token delivered. Default is email but can be sms.
+tfa_timeout - When using imap or rest-api, how long to wait, in seconds, between checks.
+tfa_total_timeout - When using imap or rest-api, how long to wait, in seconds, for all checks.
+tfa_host - When using imap or rest-api, host name of server.
+tfa_username - When using imap or rest-api, user name on server. If None will use Arlo username.
+tfa_password - When using imap or rest-api, password/token on server. If None will use Arlo password.
+cipher_list - Set if your IMAP server is using less secure ciphers.
+Infrequently used `kwargs` parameters:
+
+These parameters are very rarely changed.
+
+host - Arlo host to use. Default https://my.arlo.com.
+storage_dir - Where to store saved state.
+db_motion_time - Time, in seconds, to show active for doorbell motion detected. Default 30 seconds.
+db_ding_time - Time, in seconds, to show on for doorbell button press. Default 10 seconds.
+request_timeout - Time, in seconds, for requests sent to Arlo to succeed. Default 60 seconds.
+recent_time - Time, in seconds, for the camera to indicate it has seen motion. Default 600 seconds.
+no_media_upload - Force a media upload after camera activity. Normally not needed but some systems fail to push media uploads. Default ‘False’. Deprecated, use media_retry.
+media_retry - Force a media upload after camera activity. Normally not needed but some systems fail to push media uploads. An integer array of timeout to use to get the update image. Default ‘[]’.
+no_media_upload - Force a media upload after camera activity. Normally not needed but some systems fail to push media uploads. Default ‘False’.
+user_agent - Set what ‘user-agent’ string is passed in request headers. It affects what video stream type is returned. Default is arlo.
+mode_api - Which api to use to set the base station modes. Default is auto which choose an API based on camera model. Can also be v1, v2 or v3. Use v3 for the new location API.
+reconnect_every - Time, in minutes, to close and relogin to Arlo.
+snapshot_timeout - Time, in seconds, to stop the snapshot attempt and return the camera to the idle state.
+mqtt_host - specify the mqtt host to use, default mqtt-cluster.arloxcld.com
+mqtt_hostname_check - disable MQTT host SSL certificate checking, default True
+mqtt_transport - specify either websockets or tcp, default tcp
+Attributes
+
+Pyaarlo provides an asynchronous interface for receiving events from Arlo devices. To use it you register a callback for an attribute against a device. The following are a list of currently supported attributes:
+
+motionDetected - called when motion start and stops
+audioDetected - called when noise starts and stops
+activeMode - called when a base changes mode
+more to come… - I will flesh this out, but look in const.h for a good idea
+You can use the attribute \* to register for all events.
+
+attribute(attr)
+Return the value of attribute attr.
+
+PyArlo stores its state in key/value pairs. This returns the value associated with the key.
+
+Parameters: attr (str) – Attribute to look up.
+Returns: The value associated with attribute or None if not found.
+base_stations
+List of base stations..
+
+Returns: a list of base stations.
+Return type: list(ArloBase)
+blank_image
+Return a binaryy representation of a blank image.
+
+Returns: A bytes representation of a blank image.
+Return type: bytearray
+cameras
+List of registered cameras.
+
+Returns: a list of cameras.
+Return type: list(ArloCamera)
+doorbells
+List of registered doorbells.
+
+Returns: a list of doorbells.
+Return type: list(ArloDoorBell)
+inject_response(response)
+Inject a test packet into the event stream.
+
+Note: The method makes no effort to check the packet.
+
+Parameters: response (JSON data) – packet to inject.
+is_connected
+Returns True if the object is connected to the Arlo servers, False otherwise.
+
+last_error
+Return the last reported error.
+
+lights
+List of registered lights.
+
+Returns: a list of lights.
+Return type: list(ArloLight)
+locations
+List of locations..
+
+Returns: a list of locations.
+Return type: list(ArloLocation)
+lookup_base_station_by_id(device_id)
+Return the base_station referenced by device_id.
+
+Parameters: device_id – The base_station device to look for
+Returns: A base_station object or ‘None’ on failure.
+Return type: ArloDoorBell
+lookup_base_station_by_name(name)
+Return the base_station called name.
+
+Parameters: name – The base_station name to look for
+Returns: A base_station object or ‘None’ on failure.
+Return type: ArloDoorBell
+lookup_camera_by_id(device_id)
+Return the camera referenced by device_id.
+
+Parameters: device_id – The camera device to look for
+Returns: A camera object or ‘None’ on failure.
+Return type: ArloCamera
+lookup_camera_by_name(name)
+Return the camera called name.
+
+Parameters: name – The camera name to look for
+Returns: A camera object or ‘None’ on failure.
+Return type: ArloCamera
+lookup_doorbell_by_id(device_id)
+Return the doorbell referenced by device_id.
+
+Parameters: device_id – The doorbell device to look for
+Returns: A doorbell object or ‘None’ on failure.
+Return type: ArloDoorBell
+lookup_doorbell_by_name(name)
+Return the doorbell called name.
+
+Parameters: name – The doorbell name to look for
+Returns: A doorbell object or ‘None’ on failure.
+Return type: ArloDoorBell
+lookup_light_by_id(device_id)
+Return the light referenced by device_id.
+
+Parameters: device_id – The light device to look for
+Returns: A light object or ‘None’ on failure.
+Return type: ArloDoorBell
+lookup_light_by_name(name)
+Return the light called name.
+
+Parameters: name – The light name to look for
+Returns: A light object or ‘None’ on failure.
+Return type: ArloDoorBell
+stop(logout=False)
+Stop connection to Arlo and, optionally, logout.
+
+ArloBase
+class pyaarlo.base.ArloBase(name: str, arlo: PyArlo, attrs)
+Bases: pyaarlo.device.ArloDevice
+
+available_modes
+Returns string list of available modes.
+
+For example:: ['disarmed', 'armed', 'home']
+
+available_modes_with_ids
+Returns dictionary of available modes mapped to Arlo ids.
+
+For example:: {'armed': 'mode1','disarmed': 'mode0','home': 'mode2'}
+
+has_capability(cap)
+Is the device capable of performing activity cap:.
+
+Used to determine if devices can perform certain actions, like motion or audio detection.
+
+See attribute list against PyArlo.
+
+Parameters: cap – Attribute - eg motionStarted - to check.
+Returns: True it is, False it isn’t.
+mode
+Returns the current mode.
+
+on_schedule
+Returns True is base station is running a schedule.
+
+schedule
+Returns current schedule name or None if no schedule active.
+
+siren_off()
+Turn base siren off.
+
+Does nothing if base doesn’t support sirens.
+
+siren_on(duration=300, volume=8)
+Turn base siren on.
+
+Does nothing if base doesn’t support sirens.
+
+Parameters:
+duration – how long, in seconds, to sound for
+volume – how long, from 1 to 8, to sound
+siren_state
+Returns the current siren state (on or off).
+
+state
+Returns a string describing the device’s current state.
+
+update_mode()
+Check and update the base’s current mode.
+
+update_modes(initial=False)
+Get and update the available modes for the base.
+
+update_states()
+Get device state from ‘old’ style base stations. Most new devices return their state from the the devices URL but we need to query the original base stations for their child states.
+
+ArloCamera
+class pyaarlo.camera.ArloCamera(name, arlo, attrs)
+Bases: pyaarlo.device.ArloChildDevice
+
+add_attr_callback(attr, cb)
+Add an callback to be triggered when an attribute changes.
+
+Used to register callbacks to track device activity. For example, get a notification whenever motion stop and starts.
+
+See PyArlo for a non-exhaustive list of attributes.
+
+Parameters:
+attr (str) – Attribute - eg motionStarted - to monitor.
+cb – Callback to run.
+attribute(attr, default=None)
+Return the value of attribute attr.
+
+PyArlo stores its state in key/value pairs. This returns the value associated with the key.
+
+See PyArlo for a non-exhaustive list of attributes.
+
+Parameters:
+attr (str) – Attribute to look up.
+default – value to return if not found.
+Returns:
+The value associated with attribute or default if not found.
+
+base_station
+Returns the base station controlling this device.
+
+Some devices - ArloBaby for example - are their own parents. If we can’t find a basestation, this returns the first one (if any exist).
+
+battery_level
+Returns the current battery level.
+
+battery_tech
+Returns the current battery technology.
+
+Is it rechargable, wired…
+
+brightness
+Returns the camera brightness setting.
+
+captured_today
+Returns the number of videos captured today.
+
+charger_type
+Returns how the device is recharging.
+
+device_id
+Returns the device id.
+
+device_type
+Returns the device id.
+
+flip_state
+Returns True if the camera is flipped, False otherwise.
+
+floodlight_off()
+Turns the floodlight off.
+
+floodlight_on()
+Turns the floodlight on.
+
+get_audio_playback_status()
+Gets the current playback status and available track list
+
+get_snapshot(timeout=60)
+Gets a snapshot from the camera and returns it.
+
+Parameters: timeout – how long to wait, in seconds, before stopping the snapshot attempt
+Returns: a binary represention of the image, or the last image if snapshot timed out
+Return type: bytearray
+get_stream(user_agent=None)
+Start a stream and return the URL for it.
+
+Code does nothing with the url, it’s up to you to pass the url to something.
+
+The stream will stop if nothing connects to it within 30 seconds.
+
+get_video()
+Download and return the last recorded video.
+
+Note: Prefer getting the url and downloading it yourself.
+
+has_activity(activity)
+Returns True is camera is performing a particular activity, False otherwise.
+
+has_batteries
+Returns True if device has batteries installed, False otherwise.
+
+has_capability(cap)
+Is the device capable of performing activity cap:.
+
+Used to determine if devices can perform certain actions, like motion or audio detection.
+
+See attribute list against PyArlo.
+
+Parameters: cap – Attribute - eg motionStarted - to check.
+Returns: True it is, False it isn’t.
+has_charger
+Returns True if the charger is plugged in, False otherwise.
+
+hw_version
+Returns the hardware version.
+
+is_charger_only
+Returns True if the cahrger is plugged in with no batteries, False otherwise.
+
+is_charging
+Returns True if the device is charging, False otherwise.
+
+is_corded
+Returns True if the device is connected directly to a power outlet, False otherwise.
+
+The device can’t have any battery option, it can’t be using a charger, it has to run directly from a plug. ie, an original base station.
+
+is_on
+Returns True if the camera turned on.
+
+is_own_parent
+Returns True if device is its own parent.
+
+Can work from child or parent class.
+
+is_recording
+Returns True if camera is recording a video, False otherwise.
+
+Recording can be started from anywhere.
+
+is_streaming
+Returns True if camera is streaming a video, False otherwise.
+
+Stream has to be started locally.
+
+is_taking_idle_snapshot
+Returns True if camera is taking a non-streaming snapshot, False otherwise.
+
+is_taking_snapshot
+Returns True if camera is taking a snapshot, False otherwise.
+
+Snapshot can be started from anywhere.
+
+is_unavailable
+Returns True if the device is unavailable, False otherwise.
+
+Note: Sorry about the double negative.
+
+last_capture
+Returns a date string showing when the last video was captured.
+
+It uses the format returned by last_capture_date_format.
+
+last_capture_date_format
+Returns a date format string used by the last_capture function.
+
+You can set this value in the parameters passed to PyArlo.
+
+last_image
+Returns the URL of the last snapshot or image taken.
+
+Will pick snapshot or image based on most recently updated.
+
+last_image_from_cache
+Returns the last image or snapshot in binary format.
+
+Returns: Binary reprsensation of the last image.
+Return type: bytearray
+last_image_source
+Returns a string describing what triggered the last image capture.
+
+Currently either capture/${date} or snapshot/${date}.
+
+last_n_videos(count)
+Returns the last count video objects describing the last captured videos.
+
+Returns: count video objects or None if no videos present.
+Return type: list(ArloVideo)
+last_snapshot
+Returns the URL of the last snapshot as reported by Arlo.
+
+last_thumbnail
+Returns the URL of the last image as reported by Arlo.
+
+last_video
+Returns a video object describing the last captured video.
+
+Returns: Video object or None if no videos present.
+Return type: ArloVideo
+mirror_state
+Returns True if the camera is mirrored, False otherwise.
+
+model_id
+Returns the model id.
+
+motion_detection_sensitivity
+Returns the camera motion sensitivity setting.
+
+name
+Returns the device name.
+
+next_track()
+Skips to the next track in the playlist.
+
+nightlight_off()
+Turns the nightlight off.
+
+nightlight_on()
+Turns the nightlight on.
+
+parent_id
+Returns the parent device id.
+
+Note: Some devices - ArloBaby for example - are their own parents.
+
+pause_track()
+Pause the playing track.
+
+play_track(track_id=None, position=0)
+Play the track. A track ID of None will resume playing the current track.
+
+Parameters:
+track_id – track id
+position – position in the track
+powersave_mode
+Returns True if the camera is on power save mode, False otherwise.
+
+previous_track()
+Skips to the previous track in the playlist.
+
+request_snapshot()
+Requests a snapshot from the camera without blocking.
+
+The snapshot can be handled with callbacks registered to LAST_IMAGE_SRC_KEY - lastImageSource starting with snapshot/, or capture/ LAST_IMAGE_DATA_KEY - presignedLastImageData containing the image data.
+
+resource_id
+Returns the child device resource id.
+
+Some devices - certain cameras - can provide other types.
+
+resource_type
+Return the resource type this child device describes.
+
+Currently limited to camera, doorbell and light.
+
+serial_number
+Returns the device serial number.
+
+set_floodlight_brightness(brightness)
+Turns the floodlight brightness value (0-255).
+
+set_music_loop_mode_continuous()
+Sets the music loop mode to repeat the entire playlist.
+
+set_music_loop_mode_single()
+Sets the music loop mode to repeat the current track.
+
+set_nightlight_brightness(brightness)
+Sets the nightlight brightness.
+
+Parameters: brightness – brightness (0-255)
+set_nightlight_color_temperature(temperature)
+Turns the nightlight to the specified Kelvin color temperature.
+
+Parameters: temperature – temperature, in Kelvin
+set_nightlight_mode(mode)
+Turns the nightlight to a particular mode.
+
+Parameters: mode – either rgb, temperature or rainbow
+Returns:
+set_nightlight_rgb(red=255, green=255, blue=255)
+Turns the nightlight color to the specified RGB value.
+
+Parameters:
+red – red value
+green – green value
+blue – blue value
+set_shuffle(shuffle=True)
+Sets playback to shuffle.
+
+Parameters: shuffle – True to turn on shuffle.
+set_spotlight_brightness(brightness)
+Sets the nightlight brightness.
+
+Parameters: brightness – brightness (0-255)
+set_spotlight_off()
+Turns the spotlight off
+
+set_spotlight_on()
+Turns the spotlight on
+
+set_volume(mute=False, volume=50)
+Sets the music volume.
+
+Parameters:
+mute – True to mute the volume.
+volume – set volume (0-100)
+signal_strength
+Returns the WiFi signal strength (0-5).
+
+siren_off()
+Turn camera siren off.
+
+Does nothing if camera doesn’t support sirens.
+
+siren_on(duration=300, volume=8)
+Turn camera siren on.
+
+Does nothing if camera doesn’t support sirens.
+
+Parameters:
+duration – how long, in seconds, to sound for
+volume – how long, from 1 to 8, to sound
+start_recording(duration=None)
+Request the camera start recording.
+
+Parameters: duration – seconds for recording to run, None means no stopping.
+Note: Arlo will stop the recording after 30 seconds if nothing connects to the stream. Note: Arlo will stop the recording after 30 minutes anyway.
+
+start_stream(user_agent=None)
+Start a stream and return the URL for it.
+
+Code does nothing with the url, it’s up to you to pass the url to something.
+
+The stream will stop if nothing connects to it within 30 seconds.
+
+state
+Returns the camera’s current state.
+
+stop_activity()
+Request the camera stop whatever it is doing and return to the idle state.
+
+stop_recording()
+Request the camera stop recording.
+
+timezone
+Returns the timezone.
+
+Tries to be clever. If it doesn’t have a timezone it will try its basestation.
+
+too_cold
+Returns True if the device too cold to operate, False otherwise.
+
+turn_off()
+Turn the camera off.
+
+turn_on()
+Turn the camera on.
+
+unique_id
+Returns the unique name.
+
+unseen_videos
+Returns the camera unseen video count.
+
+update_ambient_sensors()
+Requests the latest temperature, humidity and air quality settings.
+
+Queues a job that requests the info from Arlo.
+
+update_last_image(wait=None)
+Requests last thumbnail from the backend server.
+
+:param wait if True then wait for completion, if False then don’t wait, if None then use synchronous_mode setting.
+
+Updates the last image.
+
+update_media(wait=None)
+Requests latest list of recordings from the backend server.
+
+:param wait if True then wait for completion, if False then don’t wait, if None then use synchronous_mode setting.
+
+Reloads the videos library from Arlo.
+
+user_id
+Returns the user id.
+
+user_role
+Returns the user role.
+
+using_wifi
+Returns True if the device is connected to the wifi, False otherwise.
+
+This means connecting directly to your home wifi, not connecting to and Arlo basestation.
+
+was_recently_active
+Returns True if camera was recently active, False otherwise.
+
+web_id
+Return the device’s web id.
+
+xcloud_id
+Returns the device’s xcloud id.
+
+ArloDoorBell
+class pyaarlo.doorbell.ArloDoorBell(name, arlo, attrs)
+Bases: pyaarlo.device.ArloChildDevice
+
+add_attr_callback(attr, cb)
+Add an callback to be triggered when an attribute changes.
+
+Used to register callbacks to track device activity. For example, get a notification whenever motion stop and starts.
+
+See PyArlo for a non-exhaustive list of attributes.
+
+Parameters:
+attr (str) – Attribute - eg motionStarted - to monitor.
+cb – Callback to run.
+attribute(attr, default=None)
+Return the value of attribute attr.
+
+PyArlo stores its state in key/value pairs. This returns the value associated with the key.
+
+See PyArlo for a non-exhaustive list of attributes.
+
+Parameters:
+attr (str) – Attribute to look up.
+default – value to return if not found.
+Returns:
+The value associated with attribute or default if not found.
+
+base_station
+Returns the base station controlling this device.
+
+Some devices - ArloBaby for example - are their own parents. If we can’t find a basestation, this returns the first one (if any exist).
+
+battery_level
+Returns the current battery level.
+
+battery_tech
+Returns the current battery technology.
+
+Is it rechargable, wired…
+
+charger_type
+Returns how the device is recharging.
+
+device_id
+Returns the device id.
+
+device_type
+Returns the device id.
+
+has_batteries
+Returns True if device has batteries installed, False otherwise.
+
+has_capability(cap)
+Is the device capable of performing activity cap:.
+
+Used to determine if devices can perform certain actions, like motion or audio detection.
+
+See attribute list against PyArlo.
+
+Parameters: cap – Attribute - eg motionStarted - to check.
+Returns: True it is, False it isn’t.
+has_charger
+Returns True if the charger is plugged in, False otherwise.
+
+hw_version
+Returns the hardware version.
+
+is_charger_only
+Returns True if the cahrger is plugged in with no batteries, False otherwise.
+
+is_charging
+Returns True if the device is charging, False otherwise.
+
+is_corded
+Returns True if the device is connected directly to a power outlet, False otherwise.
+
+The device can’t have any battery option, it can’t be using a charger, it has to run directly from a plug. ie, an original base station.
+
+is_on
+Returns True if the device is on, False otherwise.
+
+is_own_parent
+Returns True if device is its own parent.
+
+Can work from child or parent class.
+
+is_unavailable
+Returns True if the device is unavailable, False otherwise.
+
+Note: Sorry about the double negative.
+
+model_id
+Returns the model id.
+
+name
+Returns the device name.
+
+parent_id
+Returns the parent device id.
+
+Note: Some devices - ArloBaby for example - are their own parents.
+
+resource_id
+Returns the child device resource id.
+
+Some devices - certain cameras - can provide other types.
+
+resource_type
+Return the resource type this child device describes.
+
+Currently limited to camera, doorbell and light.
+
+serial_number
+Returns the device serial number.
+
+signal_strength
+Returns the WiFi signal strength (0-5).
+
+siren_off()
+Turn camera siren off.
+
+Does nothing if camera doesn’t support sirens.
+
+siren_on(duration=300, volume=8)
+Turn camera siren on.
+
+Does nothing if camera doesn’t support sirens.
+
+Parameters:
+duration – how long, in seconds, to sound for
+volume – how long, from 1 to 8, to sound
+state
+Returns a string describing the device’s current state.
+
+timezone
+Returns the timezone.
+
+Tries to be clever. If it doesn’t have a timezone it will try its basestation.
+
+too_cold
+Returns True if the device too cold to operate, False otherwise.
+
+turn_off()
+Turn the device off.
+
+turn_on()
+Turn the device on.
+
+unique_id
+Returns the unique name.
+
+update_silent_mode()
+Requests the latest silent mode settings.
+
+Queues a job that requests the info from Arlo.
+
+user_id
+Returns the user id.
+
+user_role
+Returns the user role.
+
+using_wifi
+Returns True if the device is connected to the wifi, False otherwise.
+
+This means connecting directly to your home wifi, not connecting to and Arlo basestation.
+
+web_id
+Return the device’s web id.
+
+xcloud_id
+Returns the device’s xcloud id.
+
+ArloLight
+class pyaarlo.light.ArloLight(name, arlo, attrs)
+Bases: pyaarlo.device.ArloChildDevice
+
+add_attr_callback(attr, cb)
+Add an callback to be triggered when an attribute changes.
+
+Used to register callbacks to track device activity. For example, get a notification whenever motion stop and starts.
+
+See PyArlo for a non-exhaustive list of attributes.
+
+Parameters:
+attr (str) – Attribute - eg motionStarted - to monitor.
+cb – Callback to run.
+attribute(attr, default=None)
+Return the value of attribute attr.
+
+PyArlo stores its state in key/value pairs. This returns the value associated with the key.
+
+See PyArlo for a non-exhaustive list of attributes.
+
+Parameters:
+attr (str) – Attribute to look up.
+default – value to return if not found.
+Returns:
+The value associated with attribute or default if not found.
+
+base_station
+Returns the base station controlling this device.
+
+Some devices - ArloBaby for example - are their own parents. If we can’t find a basestation, this returns the first one (if any exist).
+
+battery_level
+Returns the current battery level.
+
+battery_tech
+Returns the current battery technology.
+
+Is it rechargable, wired…
+
+charger_type
+Returns how the device is recharging.
+
+device_id
+Returns the device id.
+
+device_type
+Returns the device id.
+
+has_batteries
+Returns True if device has batteries installed, False otherwise.
+
+has_capability(cap)
+Is the device capable of performing activity cap:.
+
+Used to determine if devices can perform certain actions, like motion or audio detection.
+
+See attribute list against PyArlo.
+
+Parameters: cap – Attribute - eg motionStarted - to check.
+Returns: True it is, False it isn’t.
+has_charger
+Returns True if the charger is plugged in, False otherwise.
+
+hw_version
+Returns the hardware version.
+
+is_charger_only
+Returns True if the cahrger is plugged in with no batteries, False otherwise.
+
+is_charging
+Returns True if the device is charging, False otherwise.
+
+is_corded
+Returns True if the device is connected directly to a power outlet, False otherwise.
+
+The device can’t have any battery option, it can’t be using a charger, it has to run directly from a plug. ie, an original base station.
+
+is_on
+Returns True if the device is on, False otherwise.
+
+is_own_parent
+Returns True if device is its own parent.
+
+Can work from child or parent class.
+
+is_unavailable
+Returns True if the device is unavailable, False otherwise.
+
+Note: Sorry about the double negative.
+
+model_id
+Returns the model id.
+
+name
+Returns the device name.
+
+parent_id
+Returns the parent device id.
+
+Note: Some devices - ArloBaby for example - are their own parents.
+
+resource_id
+Returns the child device resource id.
+
+Some devices - certain cameras - can provide other types.
+
+resource_type
+Return the resource type this child device describes.
+
+Currently limited to camera, doorbell and light.
+
+serial_number
+Returns the device serial number.
+
+set_brightness(brightness)
+Set the light brightness.
+
+Parameters: brightness – brightness to use (0-255)
+signal_strength
+Returns the WiFi signal strength (0-5).
+
+state
+Returns a string describing the device’s current state.
+
+timezone
+Returns the timezone.
+
+Tries to be clever. If it doesn’t have a timezone it will try its basestation.
+
+too_cold
+Returns True if the device too cold to operate, False otherwise.
+
+turn_off()
+Turn the light off.
+
+turn_on(brightness=None, rgb=None)
+Turn the light on.
+
+Parameters:
+brightness – how bright to make the light
+rgb – what color to make the light
+unique_id
+Returns the unique name.
+
+user_id
+Returns the user id.
+
+user_role
+Returns the user role.
+
+using_wifi
+Returns True if the device is connected to the wifi, False otherwise.
+
+This means connecting directly to your home wifi, not connecting to and Arlo basestation.
+
+web_id
+Return the device’s web id.
+
+xcloud_id
+Returns the device’s xcloud id.
+
+ArloVideo
+class pyaarlo.media.ArloVideo(attrs, camera, arlo, base)
+Object for Arlo Video file.
+
+content_type
+Returns the video content type.
+
+Usually video/mp4
+
+created_at
+Returns date video was creaed, adjusted to ms
+
+created_at_pretty(date_format=None)
+Returns date video was taken formated with last_date_format
+
+created_today
+Returns True if video was taken today, False otherwise.
+
+datetime
+Returns a python datetime object of when video was created.
+
+id
+Returns unique id representing the video.
+
+media_duration_seconds
+Returns how long the recording last.
+
+object_region
+Returns the region of the thumbnail showing the object.
+
+object_type
+Returns what object caused the video to start.
+
+Currently is vehicle, person, animal or other.
+
+thumbnail_url
+Returns the URL of the thumbnail image.
+
+url
+Returns the URL of the video.
+
+video_url
+Returns the URL of the video.
+
+Indices and tables
+Index
+Module Index
+Search Page
+PyAarlo
+Navigation
+Quick search
+Sponsored: Aikido Security
+Dev-first security. Less noise, more coding. Let Aikido do the work.
+Start Scanning for Free Today.
+Ad by EthicalAds · ℹ️
+©2020, Steve Herrell. | Powered by Sphinx 1.8.6 & Alabaster 0.7.13 | Page source
+Read the Docs
+latest
