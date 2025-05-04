@@ -1,15 +1,38 @@
 # Arlo Timelapse
 
-A Python application to connect to Arlo cameras and create timelapses of construction sites or other scenes using the Arlo API and AWS Lambda.
+A Python application to connect to Arlo cameras and create timelapses of construction sites or other scenes using the Arlo API and AWS Lambda and storing image in s3.
+
+## Table of Contents
+
+- [Features](#features)
+- [Development](#development)
+- [Project Structure](#project-structure)
+- [Setup](#setup)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Testing Locally](#testing-locally)
+  - [Two-Factor Authentication via gmail (2FA)](#two-factor-authentication-via-gmail-2fa)
+  - [AWS Lambda Setup](#aws-lambda-setup)
+- [Quick Code Update & Redeployment Guide](#quick-code-update--redeployment-guide)
+- [Downloading and Managing Images](#downloading-and-managing-images)
+- [Creating Timelapses](#creating-timelapses)
+- [Acknowledgements & Inspiration](#acknowledgements--inspiration)
+- [License](#license)
 
 ## Features
 
 - Using pyArlo
 - Connect to Arlo cameras using credentials with MFA support
-- Capture snapshots from cameras
-- Schedule automatic snapshots via AWS Lambda
-- Store images in S3 for easy timelapse creation
 - Docker-based deployment for reliable Lambda compatibility
+- Capture snapshots from cameras
+- Schedule automatic snapshots via AWS Lambda and EventBridge
+- Store images in S3 for easy timelapse creation
+
+## Development
+
+This project was developed using [Cursor](https://cursor.sh) IDE's agent mode with Claude 3.7 Sonnet.
+
+For all API interactions with the Arlo cameras, we reference the `PyArlo-Docs.mdc` file, which contains documentation of the PyArlo library functions and their usage. This ensures consistent and correct usage of the Arlo API across the codebase.
 
 ## Project Structure
 
@@ -29,12 +52,13 @@ This project contains two main Python files:
   - Checks basic camera information (battery, signal strength)
   - Requests a test snapshot to confirm camera operation
 
-## Local Setup
+## Setup
 
 ### Prerequisites
 
 - Python 3.6+
 - Arlo account credentials
+- Gmail account (for automated 2FA)
 - AWS account (for Lambda and S3 setup)
 
 ### Installation
@@ -54,14 +78,9 @@ This project contains two main Python files:
 
 3. Activate the virtual environment:
 
-   - On macOS/Linux:
-     ```
-     source venv/bin/activate
-     ```
-   - On Windows:
-     ```
-     venv\Scripts\activate
-     ```
+   ```
+   source venv/bin/activate
+   ```
 
 4. Install dependencies:
 
@@ -101,61 +120,51 @@ This project provides two ways to test your setup locally:
    ```
    This runs the `lambda_function.py` script which uses automated IMAP-based 2FA and attempts to save a snapshot. This requires your TFA_USERNAME and TFA_PASSWORD to be properly configured in your .env file.
 
-### Quick Code Update & Redeployment Guide
+### Two-Factor Authentication via gmail (2FA)
 
-If you're returning to the project and need to update the Lambda function:
+Since Lambda functions run without user interaction, you need an automated way to handle Arlo's 2FA requirements. The PyArlo library supports automatic 2FA code retrieval via IMAP:
 
-1. ✅ Activate your virtual environment:
+#### Setting Up Gmail for Automated 2FA
 
-   ```
-   source venv/bin/activate   # On macOS/Linux
-   ```
+1. **IMAP in Gmail**:
 
-2. ✅ Make your code changes to `lambda_function.py`
+   - Gmail now has IMAP permanently enabled by default (as of January 2025)
+   - No configuration needed for IMAP access
 
-3. ✅ Test locally:
+2. **Create an App Password** (if your Gmail uses 2FA):
 
-   ```
-   make run
-   ```
-
-4. ✅ Rebuild and deploy using Docker:
-
-   ```
-   ./build_and_deploy.sh
-   ```
-
-5. ✅ Test the function in AWS Lambda console:
-   - Go to AWS Lambda Console > Functions > arlo-snapshot-function
-   - Click the "Test" tab at the top
-   - Create a new test event if needed (empty JSON `{}` is fine)
-   - Click "Test" button and wait for execution to complete
-   - Check the execution results for success (status code 200)
-6. ✅ Verify in CloudWatch logs:
-   - Go to CloudWatch Console > Log groups > /aws/lambda/arlo-snapshot-function
-   - Open the most recent log stream
-   - Look for success messages like "Successfully uploaded snapshot\_\*.jpg to S3"
-   - Check for any errors if the function failed
-
-### Adding Two-Factor Authentication to an Existing Lambda Function
-
-If you've already deployed your Lambda function without TFA and want to add it:
-
-1. ✅ Configure Gmail for IMAP access:
-
-   - Note: As of January 2025, Gmail always has IMAP enabled by default
-   - No action needed for IMAP configuration as it's already enabled in Gmail
-
-2. ✅ Create an App Password in Gmail:
-
-   - Go to your [Google Account Security settings](https://myaccount.google.com/security)
-   - Ensure 2-Step Verification is enabled
-   - Find and click on "App passwords"
+   - Go to your [Google Account](https://myaccount.google.com/)
+   - Go to "Security" > "2-Step Verification"
+   - Scroll down and click on "App passwords"
    - Select "Mail" as the app and "Other" as the device (name it "ArloLambdaTimeLapse")
    - Click "Generate"
-   - Copy the 16-character password (without spaces)
+   - Copy the 16-character password that appears (you'll use this in Lambda)
 
-3. ✅ Update your local .env file:
+3. **Update Your Lambda Function Code**:
+
+   - Modify the `lambda_function.py` to use IMAP for 2FA:
+
+   ```python
+   # In lambda_function.py
+   arlo = PyArlo(
+       username=username,
+       password=password,
+       tfa_type="email",
+       tfa_source="imap",  # Use IMAP to fetch codes from email
+       tfa_host="imap.gmail.com",
+       tfa_username=os.getenv("TFA_USERNAME"),  # Gmail username
+       tfa_password=os.getenv("TFA_PASSWORD"),  # Gmail app password
+   )
+   ```
+
+4. **Add Environment Variables to Lambda**:
+
+   - Go to AWS Lambda Console > Your Function > Configuration > Environment Variables
+   - Add these new variables:
+     - `TFA_USERNAME`: Your Gmail address (e.g., yourname@gmail.com)
+     - `TFA_PASSWORD`: Your Gmail app password (the 16-character code)
+
+5. **Update Your .env File** (for local testing):
 
    ```
    USER_NAME=your_arlo_email
@@ -166,29 +175,10 @@ If you've already deployed your Lambda function without TFA and want to add it:
    TFA_PASSWORD=your_gmail_app_password
    ```
 
-4. ✅ Test locally:
+6. **Update Your Lambda Deployment**:
+   - Redeploy your Lambda function using the build_and_deploy.sh script
 
-   ```
-   make run
-   ```
-
-5. ✅ Update your Lambda function:
-
-   - Go to AWS Lambda Console > Functions > arlo-snapshot-function
-   - Go to "Configuration" > "Environment variables"
-   - Add two new variables:
-     - `TFA_USERNAME`: Your Gmail address
-     - `TFA_PASSWORD`: Your Gmail app password
-
-6. ✅ Rebuild and deploy:
-
-   ```
-   ./build_and_deploy.sh
-   ```
-
-7. ✅ Test in AWS Lambda console and check CloudWatch logs
-
-## AWS Lambda Setup
+### AWS Lambda Setup
 
 To automate snapshot collection for timelapses, you can deploy this script to AWS Lambda and schedule it to run 6 times per day.
 
@@ -265,32 +255,7 @@ Or through the AWS Console:
 
 You can prepare your Lambda deployment package in two ways:
 
-#### Option 1: Simple ZIP Deployment
-
-1. Install AWS CLI if you haven't already:
-
-   ```
-   pip install awscli
-   ```
-
-   (You should have already configured AWS CLI in the previous step)
-
-2. Create a deployment package:
-
-   ```
-   mkdir deployment
-   pip install -r requirements.txt -t deployment/
-   cp lambda_function.py deployment/
-   ```
-
-3. Create a ZIP file for deployment:
-   ```
-   cd deployment
-   zip -r ../lambda_deployment.zip .
-   cd ..
-   ```
-
-#### Option 2: Docker-Based Deployment (Recommended)
+#### Docker-Based Deployment
 
 This approach ensures binary compatibility with the Lambda environment, especially for libraries with compiled components.
 
@@ -415,7 +380,7 @@ In the Lambda function configuration:
    - `TFA_USERNAME`: Your Gmail address used for receiving 2FA codes
    - `TFA_PASSWORD`: Your Gmail app password (16-character code)
 
-Note: For the TFA variables, refer to the "Handling 2FA in Lambda" section below for detailed setup instructions.
+Note: For the TFA variables, refer to the "Two-Factor Authentication (2FA)" section below for detailed setup instructions.
 
 ### 7. Configure Trigger
 
@@ -478,6 +443,42 @@ aws logs filter-log-events --log-group-name /aws/lambda/arlo-snapshot-function
 
 Or visit the CloudWatch Logs console and select the log group for your function.
 
+## Quick Code Update & Redeployment Guide
+
+If you're returning to the project and need to update the Lambda function:
+
+1. ✅ Activate your virtual environment:
+
+   ```
+   source venv/bin/activate   # On macOS/Linux
+   ```
+
+2. ✅ Make your code changes to `lambda_function.py`
+
+3. ✅ Test locally:
+
+   ```
+   make run
+   ```
+
+4. ✅ Rebuild and deploy using Docker:
+
+   ```
+   ./build_and_deploy.sh
+   ```
+
+5. ✅ Test the function in AWS Lambda console:
+   - Go to AWS Lambda Console > Functions > arlo-snapshot-function
+   - Click the "Test" tab at the top
+   - Create a new test event if needed (empty JSON `{}` is fine)
+   - Click "Test" button and wait for execution to complete
+   - Check the execution results for success (status code 200)
+6. ✅ Verify in CloudWatch logs:
+   - Go to CloudWatch Console > Log groups > /aws/lambda/arlo-snapshot-function
+   - Open the most recent log stream
+   - Look for success messages like "Successfully uploaded snapshot\_\*.jpg to S3"
+   - Check for any errors if the function failed
+
 ## Downloading and Managing Images
 
 ### Check for Images in S3
@@ -519,60 +520,10 @@ cd timelapse-images
 ffmpeg -framerate 10 -pattern_type glob -i '*.jpg' -c:v libx264 -pix_fmt yuv420p timelapse.mp4
 ```
 
-## Handling 2FA in Lambda
+## Acknowledgements & Inspiration
 
-Since Lambda functions run without user interaction, you need an automated way to handle Arlo's 2FA requirements. The PyArlo library supports automatic 2FA code retrieval via IMAP:
+This project was inspired by [arlo-timelapse-lambda](https://github.com/Notalifeform/arlo-timelapse-lambda) by Notalifeform, which provides a similar approach to creating timelapses with Arlo cameras. While no code was used from that project, it provided valuable insights into working with Arlo cameras and AWS Lambda integration.
 
-### Setting Up Gmail for Automated 2FA
+Special thanks to the developers of the [PyArlo](https://github.com/jeffreydwalter/arlo) library, which makes interfacing with Arlo cameras possible. The `PyArlo-Docs.mdc` file has been an invaluable reference for understanding and implementing the Arlo API functionality in this project.
 
-1. **IMAP in Gmail**:
-
-   - Gmail now has IMAP permanently enabled by default (as of January 2025)
-   - No configuration needed for IMAP access
-
-2. **Create an App Password** (if your Gmail uses 2FA):
-
-   - Go to your [Google Account](https://myaccount.google.com/)
-   - Go to "Security" > "2-Step Verification"
-   - Scroll down and click on "App passwords"
-   - Select "Mail" as the app and "Other" as the device (name it "ArloLambda")
-   - Click "Generate"
-   - Copy the 16-character password that appears (you'll use this in Lambda)
-
-3. **Update Your Lambda Function Code**:
-
-   - Modify the `lambda_function.py` to use IMAP for 2FA:
-
-   ```python
-   # In lambda_function.py
-   arlo = PyArlo(
-       username=username,
-       password=password,
-       tfa_type="email",
-       tfa_source="imap",  # Use IMAP to fetch codes from email
-       tfa_host="imap.gmail.com",
-       tfa_username=os.getenv("TFA_USERNAME"),  # Gmail username
-       tfa_password=os.getenv("TFA_PASSWORD"),  # Gmail app password
-   )
-   ```
-
-4. **Add Environment Variables to Lambda**:
-
-   - Go to AWS Lambda Console > Your Function > Configuration > Environment Variables
-   - Add these new variables:
-     - `TFA_USERNAME`: Your Gmail address (e.g., yourname@gmail.com)
-     - `TFA_PASSWORD`: Your Gmail app password (the 16-character code)
-
-5. **Update Your .env File** (for local testing):
-
-   ```
-   USER_NAME=your_arlo_email
-   PASSWORD=your_arlo_password
-   CAMERA_NAME=your_camera_name
-   S3_BUCKET_NAME=my-arlo-timelapse-images
-   TFA_USERNAME=your_gmail_address
-   TFA_PASSWORD=your_gmail_app_password
-   ```
-
-6. **Update Your Lambda Deployment**:
-   - Redeploy your Lambda function using the build_and_deploy.sh script
+## License

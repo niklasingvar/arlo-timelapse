@@ -1,3 +1,11 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+SNAPSHOT OF PyAarlo’s documentation!
+
 Welcome to PyAarlo’s documentation!
 PyArlo
 class pyaarlo.PyArlo(\*\*kwargs)
