@@ -1,4 +1,4 @@
-.PHONY: setup install run clean
+.PHONY: setup install run clean test-arlo
 
 # Default target
 all: setup run
@@ -11,8 +11,12 @@ setup:
 install: setup
 	. venv/bin/activate && pip install -r requirements.txt
 
-# Run the script with virtual environment activated
+# Run the Lambda function locally (main functionality)
 run:
+	. venv/bin/activate && python lambda_function.py
+
+# Simple test for Arlo connection only (for local development)
+test-arlo:
 	. venv/bin/activate && python test_connect_arlo.py
 
 # Clean up pyc files and __pycache__ directories

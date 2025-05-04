@@ -26,6 +26,8 @@ def lambda_handler(event, context):
     password = os.getenv("PASSWORD")
     camera_name = os.getenv("CAMERA_NAME")
     bucket_name = os.getenv("S3_BUCKET_NAME")
+    tfa_username = os.getenv("TFA_USERNAME")
+    tfa_password = os.getenv("TFA_PASSWORD")
 
     if not all([username, password, camera_name, bucket_name]):
         return {"statusCode": 500, "body": "Missing required environment variables"}
@@ -33,11 +35,15 @@ def lambda_handler(event, context):
     try:
         # Connect to Arlo
         print("Connecting to Arlo...")
+        # For TFA setup instructions, see "Handling 2FA in Lambda" section in README.md
         arlo = PyArlo(
             username=username,
             password=password,
-            tfa_type="email",  # Or "sms" if you use text messages for 2FA
-            tfa_source="console",  # Default method to get 2FA code
+            tfa_type="email",  # Use email for 2FA
+            tfa_source="imap",  # Use IMAP to get 2FA code from email
+            tfa_host="imap.gmail.com",  # Gmail IMAP server
+            tfa_username=tfa_username,  # Gmail address
+            tfa_password=tfa_password,  # Gmail app password
             save_state=True,
             wait_for_initial_setup=True,
         )
