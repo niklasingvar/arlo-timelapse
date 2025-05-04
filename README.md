@@ -1,6 +1,6 @@
 # Arlo Timelapse
 
-A Python application to connect to Arlo cameras and create timelapses of construction sites or other scenes using the Arlo API and AWS Lambda and storing image in s3.
+A Python application to connect to Arlo cameras and create timelapses of construction sites or other scenes using the Arlo API, AWS Lambda and s3 for image storage.
 
 ## Table of Contents
 
@@ -94,6 +94,7 @@ This project contains two main Python files:
    USER_NAME=your_arlo_email
    PASSWORD=your_arlo_password
    CAMERA_NAME=your_camera_name
+   # S3 only required for lambda_function.py and not test_connect_arlo.py)
    S3_BUCKET_NAME=my-arlo-timelapse-images
    # For automated 2FA via Gmail IMAP (required for lambda_function.py)
    TFA_USERNAME=your_gmail_address
@@ -525,5 +526,3 @@ ffmpeg -framerate 10 -pattern_type glob -i '*.jpg' -c:v libx264 -pix_fmt yuv420p
 This project was inspired by [arlo-timelapse-lambda](https://github.com/Notalifeform/arlo-timelapse-lambda) by Notalifeform, which provides a similar approach to creating timelapses with Arlo cameras. While no code was used from that project, it provided valuable insights into working with Arlo cameras and AWS Lambda integration.
 
 Special thanks to the developers of the [PyArlo](https://github.com/jeffreydwalter/arlo) library, which makes interfacing with Arlo cameras possible. The `PyArlo-Docs.mdc` file has been an invaluable reference for understanding and implementing the Arlo API functionality in this project.
-
-## License
